@@ -1,0 +1,24 @@
+[package]
+name = "chatoss-ui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "chatoss"
+path = "src/main.rs"
+
+[dependencies]
+chatoss-core = { path = "../core" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+tokio = { workspace = true }
+async-trait = { workspace = true }
+eframe = "0.29"
+egui = "0.29"
+egui_commonmark = "0.18"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "macros", "time"] }
+tempfile = "3"
