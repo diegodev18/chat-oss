@@ -22,8 +22,8 @@ if [[ "$live" -eq 1 ]]; then
     die "Falta el modelo '$CHATOSS_MODEL'. Descargalo con: ollama pull $CHATOSS_MODEL"
   fi
   info "Tests live contra Ollama ($CHATOSS_MODEL)…"
-  exec cargo test --workspace "${args[@]}" -- --ignored --nocapture
+  exec cargo test --workspace ${args:+"${args[@]}"} -- --ignored --nocapture
 fi
 
 info "Tests del workspace…"
-exec cargo test --workspace "${args[@]}"
+exec cargo test --workspace ${args:+"${args[@]}"}

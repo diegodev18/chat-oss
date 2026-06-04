@@ -23,4 +23,4 @@ fi
 
 info "Lanzando chatoss…"
 # shellcheck disable=SC2086
-exec cargo run $profile -p chatoss-ui --bin chatoss "${args[@]}"
+exec cargo run $profile -p chatoss-ui --bin chatoss ${args:+"${args[@]}"}
