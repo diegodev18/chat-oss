@@ -60,3 +60,18 @@ cargo test --workspace
 # Integración real contra Ollama (requiere llama3.1:8b)
 cargo test --workspace -- --ignored
 ```
+
+## API FastAPI (hello world)
+
+Servidor HTTP mínimo en `api/`:
+
+```sh
+make api-install   # instala fastapi + uvicorn
+make api           # http://127.0.0.1:8000
+```
+
+Endpoints:
+
+- `GET /` → `{"message": "Hello, World!"}`
+- `GET /health` → `{"status": "ok"}`
+- `GET /docs` → documentación interactiva (Swagger UI)

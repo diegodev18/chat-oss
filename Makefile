@@ -2,7 +2,7 @@
 # Ejecutá `make` o `make help` para ver los objetivos disponibles.
 
 .DEFAULT_GOAL := help
-.PHONY: help setup run dev check fmt clippy test test-live release reset-db clean
+.PHONY: help setup run dev check fmt clippy test test-live release reset-db clean api api-install
 
 help: ## Muestra esta ayuda
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -40,3 +40,9 @@ reset-db: ## Borra la base de datos de conversaciones
 
 clean: ## Limpia los artefactos de compilación
 	@cargo clean
+
+api-install: ## Instala dependencias de la API FastAPI
+	@python3 -m pip install -r api/requirements.txt
+
+api: ## Ejecuta la API FastAPI en http://127.0.0.1:8000
+	@python3 -m uvicorn main:app --app-dir api --reload --host 127.0.0.1 --port 8000
