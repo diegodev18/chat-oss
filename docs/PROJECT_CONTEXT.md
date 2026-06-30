@@ -190,6 +190,7 @@ rest for API keys) are **not yet defined**.
 | Topic | Rule |
 |-------|------|
 | **Code language** | **English** — identifiers, comments, error messages in source |
+| **Documentation** | README and this file may use Spanish; new technical docs should follow repo language consistency |
 | **Contributions** | Welcome — project is open to external contributors |
 | **Quality gate** | `make check` → `fmt --check` + `clippy -D warnings` + tests |
 | **Rust edition** | 2021, stable 1.85+ |
@@ -207,7 +208,19 @@ make reset-db   # wipe ~/.nativedesk/nativedesk.db
 
 ---
 
-## 10. Open questions log
+## 10. Naming
+
+| Name | Role |
+|------|------|
+| **NativeDesk** | Product name — emphasizes native desktop stack |
+| **nativedesk-core / nativedesk-ui** | Rust crate names (renamed from `chatoss-*`) |
+| **chat-oss** | Current GitHub repository name (optional rename to `nativedesk`) |
+
+Legacy `chatoss` data paths are migrated automatically on first launch after the rename.
+
+---
+
+## 11. Open questions log
 
 Track decisions as they get made:
 
@@ -224,7 +237,7 @@ Track decisions as they get made:
 
 ---
 
-## 11. For AI agents
+## 12. For AI agents
 
 When working on this codebase:
 
