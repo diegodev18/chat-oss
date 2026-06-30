@@ -22,11 +22,18 @@ pub struct ChatossApp {
     tool_status: Option<String>,
     pending_permission: Option<PendingPermission>,
     error: Option<String>,
+    editing_conv: Option<EditingConv>,
+    edit_focus_pending: bool,
 }
 
 struct PendingPermission {
     tool: String,
     args: String,
+}
+
+struct EditingConv {
+    id: i64,
+    title: String,
 }
 
 impl ChatossApp {
@@ -45,6 +52,8 @@ impl ChatossApp {
             tool_status: None,
             pending_permission: None,
             error: None,
+            editing_conv: None,
+            edit_focus_pending: false,
         }
     }
 
@@ -130,7 +139,24 @@ impl ChatossApp {
         self.engine.send(Command::SendMessage(text));
     }
 
+    fn commit_rename(&mut self) {
+        let Some(editing) = self.editing_conv.take() else { return };
+        let title = editing.title.trim().to_string();
+        if title.is_empty() {
+            self.error = Some("El título no puede estar vacío.".into());
+            self.editing_conv = Some(editing);
+            return;
+        }
+        self.engine.send(Command::RenameConversation { id: editing.id, title });
+    }
+
+    fn cancel_rename(&mut self) {
+        self.editing_conv = None;
+        self.edit_focus_pending = false;
+    }
+
     fn new_chat(&mut self) {
+        self.cancel_rename();
         let model = self.selected_model.clone().unwrap_or_default();
         self.current_conv_id = None;
         self.messages.clear();
@@ -147,6 +173,7 @@ impl eframe::App for ChatossApp {
         }
 
         self.permission_modal(ctx);
+        self.rename_modal(ctx);
         self.sidebar(ctx);
         self.top_bar(ctx);
         self.input_bar(ctx);
@@ -155,6 +182,63 @@ impl eframe::App for ChatossApp {
 }
 
 impl ChatossApp {
+    fn rename_modal(&mut self, ctx: &egui::Context) {
+        enum Action {
+            Save,
+            Cancel,
+        }
+
+        let mut action = None;
+        let focus_pending = self.edit_focus_pending;
+
+        if let Some(editing) = self.editing_conv.as_mut() {
+            egui::Window::new("Renombrar conversación")
+                .collapsible(false)
+                .resizable(false)
+                .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+                .show(ctx, |ui| {
+                    ui.label("Nombre de la sesión:");
+                    ui.add_space(6.0);
+                    let resp = ui.add(
+                        egui::TextEdit::singleline(&mut editing.title)
+                            .desired_width(320.0)
+                            .hint_text("Título"),
+                    );
+                    if focus_pending {
+                        resp.request_focus();
+                    }
+                    if resp.has_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
+                        action = Some(Action::Save);
+                    }
+                    if resp.has_focus() && ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+                        action = Some(Action::Cancel);
+                    }
+                    ui.add_space(10.0);
+                    ui.horizontal(|ui| {
+                        if ui.button("Cancelar").clicked() {
+                            action = Some(Action::Cancel);
+                        }
+                        if ui
+                            .add(egui::Button::new("Guardar").fill(egui::Color32::from_rgb(40, 90, 140)))
+                            .clicked()
+                        {
+                            action = Some(Action::Save);
+                        }
+                    });
+                });
+        }
+
+        if focus_pending {
+            self.edit_focus_pending = false;
+        }
+
+        match action {
+            Some(Action::Save) => self.commit_rename(),
+            Some(Action::Cancel) => self.cancel_rename(),
+            None => {}
+        }
+    }
+
     fn permission_modal(&mut self, ctx: &egui::Context) {
         let Some(pending) = &self.pending_permission else { return };
         let tool = pending.tool.clone();
@@ -201,6 +285,7 @@ impl ChatossApp {
 
                 let mut to_delete: Option<i64> = None;
                 let mut to_open: Option<i64> = None;
+
                 egui::ScrollArea::vertical().show(ui, |ui| {
                     for conv in &self.conversations {
                         let selected = self.current_conv_id == Some(conv.id);
@@ -209,7 +294,14 @@ impl ChatossApp {
                                 .selectable_label(selected, truncate(&conv.title, 26))
                                 .clicked()
                             {
-                                to_open = Some(conv.id);
+                                self.editing_conv = Some(EditingConv {
+                                    id: conv.id,
+                                    title: conv.title.clone(),
+                                });
+                                self.edit_focus_pending = true;
+                                if !selected {
+                                    to_open = Some(conv.id);
+                                }
                             }
                             if ui.small_button("🗑").clicked() {
                                 to_delete = Some(conv.id);
@@ -222,6 +314,9 @@ impl ChatossApp {
                     self.engine.send(Command::SelectConversation(id));
                 }
                 if let Some(id) = to_delete {
+                    if self.editing_conv.as_ref().is_some_and(|e| e.id == id) {
+                        self.cancel_rename();
+                    }
                     self.engine.send(Command::DeleteConversation(id));
                     if self.current_conv_id == Some(id) {
                         self.current_conv_id = None;

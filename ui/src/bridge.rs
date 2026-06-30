@@ -10,7 +10,7 @@ use std::thread;
 
 use async_trait::async_trait;
 use chatoss_core::agent::{Agent, AgentEvent, PermissionGate};
-use chatoss_core::ollama::{ChatMessage, HttpOllamaClient, OllamaClient, Role};
+use chatoss_core::ollama::{ChatMessage, ChatRequest, HttpOllamaClient, OllamaClient, Role};
 use chatoss_core::storage::{Conversation, Store};
 use chatoss_core::tools::{
     CalcTool, DateTimeTool, FsReadTool, FsWriteTool, ShellTool, ToolRegistry,
@@ -24,6 +24,12 @@ aritméticos, conocer la fecha/hora o leer un archivo, usa las herramientas disp
 en lugar de inventar la respuesta. Responde en el idioma del usuario.";
 
 const MAX_TITLE_LEN: usize = 40;
+
+const TITLE_SYSTEM_PROMPT: &str = "Tu única tarea es crear un título corto para el historial \
+de chat. Resume en tercera persona lo que el USUARIO dijo o preguntó, no lo que tú responderías. \
+Ejemplos: \"El usuario preguntó cómo estoy\", \"El usuario pidió ayuda con Rust\". \
+NO respondas al mensaje. NO uses primera persona del asistente. Máximo 8 palabras. \
+Responde SOLO con el título, sin comillas ni puntuación final.";
 
 /// Mensaje listo para mostrar en la UI.
 #[derive(Debug, Clone)]
@@ -46,6 +52,7 @@ pub enum Command {
     NewConversation { model: String },
     SelectConversation(i64),
     DeleteConversation(i64),
+    RenameConversation { id: i64, title: String },
     SendMessage(String),
     /// Respuesta del usuario a una solicitud de permiso.
     PermissionDecision(bool),
@@ -264,9 +271,18 @@ async fn worker_main(
                 }
                 emit_conversations(&store, &sink);
             }
+            Command::RenameConversation { id, title } => {
+                let title = title.trim();
+                if title.is_empty() {
+                    sink.send(UiEvent::Error("el título no puede estar vacío".into()));
+                } else if let Err(e) = store.rename_conversation(id, title) {
+                    sink.send(UiEvent::Error(format!("no se pudo renombrar: {e}")));
+                }
+                emit_conversations(&store, &sink);
+            }
             Command::SendMessage(text) => {
                 let Some(sess) = session.as_mut() else { continue };
-                handle_send(&agent, &store, &gate, &sink, sess, text).await;
+                handle_send(&client, &agent, &store, &gate, &sink, sess, text).await;
                 emit_conversations(&store, &sink);
             }
             Command::PermissionDecision(_) => { /* lo gestiona el dispatcher */ }
@@ -308,6 +324,7 @@ fn open_conversation(
 }
 
 async fn handle_send(
+    client: &Arc<dyn OllamaClient>,
     agent: &Agent<Arc<dyn OllamaClient>>,
     store: &Store,
     gate: &ChannelGate,
@@ -330,9 +347,10 @@ async fn handle_send(
     }
     let conv_id = sess.conv_id.expect("acaba de asignarse");
 
-    // Titula la conversación con el primer mensaje del usuario.
+    // Titula la conversación con una sub-llamada al modelo.
     if !sess.titled {
-        let _ = store.rename_conversation(conv_id, &make_title(&text));
+        let title = generate_title(client, &sess.model, &text).await;
+        let _ = store.rename_conversation(conv_id, &title);
         sess.titled = true;
     }
 
@@ -367,12 +385,60 @@ async fn handle_send(
     sink.send(UiEvent::Busy(false));
 }
 
-fn make_title(text: &str) -> String {
-    let trimmed = text.trim().replace('\n', " ");
-    if trimmed.chars().count() <= MAX_TITLE_LEN {
-        trimmed
+/// Sub-llamada al modelo para generar un título conciso a partir del primer mensaje.
+async fn generate_title(
+    client: &Arc<dyn OllamaClient>,
+    model: &str,
+    user_message: &str,
+) -> String {
+    let request = ChatRequest {
+        model: model.to_string(),
+        messages: vec![
+            ChatMessage::system(TITLE_SYSTEM_PROMPT),
+            ChatMessage::user(format!("Mensaje del usuario:\n{user_message}")),
+        ],
+        tools: vec![],
+        stream: true,
+    };
+
+    let mut content = String::new();
+    let result = client
+        .chat_stream(request, &mut |chunk| {
+            if let Some(msg) = chunk.message {
+                content.push_str(&msg.content);
+            }
+        })
+        .await;
+
+    match result {
+        Ok(()) if !content.trim().is_empty() => sanitize_title(&content),
+        _ => fallback_title(user_message),
+    }
+}
+
+fn sanitize_title(raw: &str) -> String {
+    let mut trimmed = raw.trim().replace('\n', " ");
+    if (trimmed.starts_with('"') && trimmed.ends_with('"'))
+        || (trimmed.starts_with('\'') && trimmed.ends_with('\''))
+    {
+        trimmed = trimmed[1..trimmed.len() - 1].trim().to_string();
+    }
+    trimmed = trimmed.trim_end_matches(['.', '!', '?', ':', ';']).trim().to_string();
+    if trimmed.is_empty() {
+        return fallback_title(raw);
+    }
+    truncate_title(&trimmed)
+}
+
+fn fallback_title(user_message: &str) -> String {
+    truncate_title(&user_message.trim().replace('\n', " "))
+}
+
+fn truncate_title(text: &str) -> String {
+    if text.chars().count() <= MAX_TITLE_LEN {
+        text.to_string()
     } else {
-        let cut: String = trimmed.chars().take(MAX_TITLE_LEN).collect();
+        let cut: String = text.chars().take(MAX_TITLE_LEN).collect();
         format!("{cut}…")
     }
 }
@@ -384,16 +450,54 @@ mod tests {
     use serde_json::json;
 
     #[test]
-    fn make_title_truncates_long_text() {
+    fn fallback_title_truncates_long_text() {
         let long = "a".repeat(100);
-        let title = make_title(&long);
+        let title = fallback_title(&long);
         assert_eq!(title.chars().count(), MAX_TITLE_LEN + 1); // +1 por el '…'
         assert!(title.ends_with('…'));
     }
 
     #[test]
-    fn make_title_collapses_newlines() {
-        assert_eq!(make_title("hola\nmundo"), "hola mundo");
+    fn fallback_title_collapses_newlines() {
+        assert_eq!(fallback_title("hola\nmundo"), "hola mundo");
+    }
+
+    #[test]
+    fn sanitize_title_strips_quotes_and_punctuation() {
+        assert_eq!(sanitize_title("\"Mi título.\""), "Mi título");
+    }
+
+    #[tokio::test]
+    async fn generate_title_uses_model_response() {
+        let client: Arc<dyn OllamaClient> = Arc::new(ScriptedClient {
+            responses: StdMutex::new(VecDeque::from(vec![vec![
+                token_chunk("Consulta matemática"),
+                ChatStreamChunk { message: None, done: true },
+            ]])),
+        });
+        let title = generate_title(&client, "m", "¿Cuánto es 23 por 19?").await;
+        assert_eq!(title, "Consulta matemática");
+    }
+
+    #[tokio::test]
+    async fn generate_title_falls_back_on_error() {
+        struct FailingClient;
+        #[async_trait]
+        impl OllamaClient for FailingClient {
+            async fn list_models(&self) -> Result<Vec<ModelInfo>, OllamaError> {
+                Ok(vec![])
+            }
+            async fn chat_stream(
+                &self,
+                _request: ChatRequest,
+                _on_chunk: &mut (dyn FnMut(ChatStreamChunk) + Send),
+            ) -> Result<(), OllamaError> {
+                Err(OllamaError::Decode("fallo".into()))
+            }
+        }
+        let client: Arc<dyn OllamaClient> = Arc::new(FailingClient);
+        let title = generate_title(&client, "m", "mensaje largo de prueba").await;
+        assert_eq!(title, "mensaje largo de prueba");
     }
 
     #[test]
@@ -541,6 +645,7 @@ mod tests {
         // El modelo pide escribir un archivo y luego, con el resultado, responde.
         let client: Arc<dyn OllamaClient> = Arc::new(ScriptedClient {
             responses: StdMutex::new(VecDeque::from(vec![
+                vec![token_chunk("Crear nota"), ChatStreamChunk { message: None, done: true }],
                 vec![
                     tool_call_chunk(
                         "fs_write",
@@ -608,6 +713,7 @@ mod tests {
 
         let client: Arc<dyn OllamaClient> = Arc::new(ScriptedClient {
             responses: StdMutex::new(VecDeque::from(vec![
+                vec![token_chunk("Crear nota"), ChatStreamChunk { message: None, done: true }],
                 vec![
                     tool_call_chunk("fs_write", json!({ "path": "nota.txt", "content": "x" })),
                     ChatStreamChunk { message: None, done: true },
