@@ -1,4 +1,4 @@
-# Atajos para las tareas comunes de chatoss.
+# Atajos para las tareas comunes de NativeDesk.
 # Ejecutá `make` o `make help` para ver los objetivos disponibles.
 
 .DEFAULT_GOAL := help

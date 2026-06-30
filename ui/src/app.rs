@@ -1,12 +1,12 @@
 //! La aplicación egui: estado de UI, manejo de eventos y render.
 
-use chatoss_core::storage::Conversation;
+use nativedesk_core::storage::Conversation;
 use eframe::egui;
 use egui_commonmark::{CommonMarkCache, CommonMarkViewer};
 
 use crate::bridge::{Command, DisplayMessage, DisplayRole, Engine, UiEvent};
 
-pub struct ChatossApp {
+pub struct NativeDeskApp {
     engine: Engine,
     md_cache: CommonMarkCache,
 
@@ -36,7 +36,7 @@ struct EditingConv {
     title: String,
 }
 
-impl ChatossApp {
+impl NativeDeskApp {
     pub fn new(engine: Engine) -> Self {
         Self {
             engine,
@@ -166,7 +166,7 @@ impl ChatossApp {
     }
 }
 
-impl eframe::App for ChatossApp {
+impl eframe::App for NativeDeskApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         for event in self.engine.drain() {
             self.apply_event(event);
@@ -181,7 +181,7 @@ impl eframe::App for ChatossApp {
     }
 }
 
-impl ChatossApp {
+impl NativeDeskApp {
     fn rename_modal(&mut self, ctx: &egui::Context) {
         enum Action {
             Save,
@@ -331,7 +331,7 @@ impl ChatossApp {
         egui::TopBottomPanel::top("topbar").show(ctx, |ui| {
             ui.add_space(4.0);
             ui.horizontal(|ui| {
-                ui.heading("chatoss");
+                ui.heading("NativeDesk");
                 ui.separator();
                 ui.label("Modelo:");
                 let current = self.selected_model.clone().unwrap_or_else(|| "—".into());

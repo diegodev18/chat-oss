@@ -1,5 +1,5 @@
 # shellcheck shell=bash
-# Funciones y variables comunes para los scripts de chatoss.
+# Shared helpers for NativeDesk scripts.
 # Se importa con:  source "$(dirname "$0")/_lib.sh"
 
 set -euo pipefail
@@ -26,7 +26,7 @@ have() { command -v "$1" >/dev/null 2>&1; }
 # Host de Ollama (configurable con OLLAMA_HOST).
 OLLAMA_HOST="${OLLAMA_HOST:-http://localhost:11434}"
 # Modelo por defecto usado en los tests live y en setup.
-CHATOSS_MODEL="${CHATOSS_MODEL:-llama3.1:8b}"
+NATIVEDESK_MODEL="${NATIVEDESK_MODEL:-${CHATOSS_MODEL:-llama3.1:8b}}"
 
 # Devuelve 0 si Ollama responde en OLLAMA_HOST.
 ollama_up() {

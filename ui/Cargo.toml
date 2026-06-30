@@ -1,15 +1,15 @@
 [package]
-name = "chatoss-ui"
+name = "nativedesk-ui"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [[bin]]
-name = "chatoss"
+name = "nativedesk"
 path = "src/main.rs"
 
 [dependencies]
-chatoss-core = { path = "../core" }
+nativedesk-core = { path = "../core" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 anyhow = { workspace = true }

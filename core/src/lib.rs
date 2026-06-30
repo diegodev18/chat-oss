@@ -1,4 +1,4 @@
-//! chatoss-core: núcleo UI-agnóstico del agente de chat sobre Ollama.
+//! nativedesk-core: UI-agnostic chat agent core powered by Ollama.
 //!
 //! Expone el cliente de Ollama, el loop agéntico, las herramientas (tools),
 //! la persistencia en SQLite y los tipos de eventos/comandos que conectan la

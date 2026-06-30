@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Ejecuta la app de escritorio chatoss.
+# Launch the NativeDesk desktop app.
 #
 #   ./scripts/run.sh             # release (rápido en runtime)
 #   ./scripts/run.sh --debug     # build de debug (compila más rápido)
@@ -24,7 +24,7 @@ if ! ollama_up; then
   warn "Arrancalo en otra terminal con 'ollama serve' o la app no podrá chatear."
 fi
 
-run_cmd="run $profile -p chatoss-ui --bin chatoss"
+run_cmd="run $profile -p nativedesk-ui --bin nativedesk"
 if ((${#args[@]})); then
   run_cmd+=" ${args[*]}"
 fi
@@ -37,6 +37,6 @@ if [[ "$watch" == true ]]; then
   exec cargo watch -q -x "$run_cmd"
 fi
 
-info "Lanzando chatoss…"
+info "Lanzando NativeDesk…"
 # shellcheck disable=SC2086
 exec cargo $run_cmd
