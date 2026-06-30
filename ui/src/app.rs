@@ -328,12 +328,11 @@ impl ChatossApp {
 fn render_message(ui: &mut egui::Ui, cache: &mut CommonMarkCache, msg: &DisplayMessage) {
     match msg.role {
         DisplayRole::User => {
-            ui.horizontal(|ui| {
-                ui.add_space(ui.available_width() * 0.18);
+            ui.with_layout(egui::Layout::top_down(egui::Align::Max), |ui| {
                 egui::Frame::group(ui.style())
                     .fill(egui::Color32::from_rgb(40, 60, 90))
                     .show(ui, |ui| {
-                        ui.set_max_width(ui.available_width());
+                        ui.set_max_width(ui.available_width() * 0.75);
                         ui.label(egui::RichText::new(&msg.text).color(egui::Color32::WHITE));
                     });
             });
