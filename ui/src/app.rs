@@ -60,9 +60,14 @@ impl ChatossApp {
             UiEvent::ConversationOpened { id, model, messages } => {
                 self.current_conv_id = (id != 0).then_some(id);
                 self.selected_model = Some(model);
-                self.messages = messages;
-                self.streaming = false;
-                self.tool_status = None;
+                // Al primer envío, submit() añade el mensaje del usuario antes de que
+                // el motor responda con ConversationOpened (historial vacío). No lo borramos.
+                let keep_optimistic = id == 0 && messages.is_empty() && !self.messages.is_empty();
+                if !keep_optimistic {
+                    self.messages = messages;
+                    self.streaming = false;
+                    self.tool_status = None;
+                }
             }
             UiEvent::ConversationCreated(id) => self.current_conv_id = Some(id),
             UiEvent::Token(t) => {
