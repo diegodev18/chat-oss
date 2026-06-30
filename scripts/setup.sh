@@ -17,6 +17,10 @@ info "Comprobando componentes opcionales (rustfmt, clippy)…"
 have rustfmt || warn "rustfmt no encontrado. Instalalo con: rustup component add rustfmt"
 cargo clippy --version >/dev/null 2>&1 || warn "clippy no encontrado. Instalalo con: rustup component add clippy"
 
+info "Comprobando herramientas de desarrollo…"
+cargo watch --version >/dev/null 2>&1 \
+  || warn "cargo-watch no encontrado (necesario para 'make dev'). Instalalo con: cargo install cargo-watch"
+
 info "Comprobando Ollama…"
 if ! have ollama; then
   warn "ollama no está instalado. Descargalo desde https://ollama.com"

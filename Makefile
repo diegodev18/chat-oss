@@ -14,8 +14,8 @@ setup: ## Verifica dependencias y descarga el modelo de Ollama
 run: ## Ejecuta la app (release)
 	@./scripts/run.sh
 
-dev: ## Ejecuta la app (build de debug, compila más rápido)
-	@./scripts/run.sh --debug
+dev: ## Ejecuta la app en debug y la reinicia al cambiar el código
+	@./scripts/run.sh --debug --watch
 
 check: ## Puerta de calidad: fmt --check + clippy + tests
 	@./scripts/check.sh
