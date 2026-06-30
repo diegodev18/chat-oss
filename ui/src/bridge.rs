@@ -9,10 +9,10 @@ use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
 
 use async_trait::async_trait;
-use chatoss_core::agent::{Agent, AgentEvent, PermissionGate};
-use chatoss_core::ollama::{ChatMessage, ChatRequest, HttpOllamaClient, OllamaClient, Role};
-use chatoss_core::storage::{Conversation, Store};
-use chatoss_core::tools::{
+use nativedesk_core::agent::{Agent, AgentEvent, PermissionGate};
+use nativedesk_core::ollama::{ChatMessage, ChatRequest, HttpOllamaClient, OllamaClient, Role};
+use nativedesk_core::storage::{Conversation, Store};
+use nativedesk_core::tools::{
     CalcTool, DateTimeTool, FsReadTool, FsWriteTool, ShellTool, ToolRegistry,
 };
 use serde_json::Value;
@@ -307,7 +307,7 @@ fn emit_conversations(store: &Store, sink: &EventSink) {
 fn open_conversation(
     store: &Store,
     id: i64,
-) -> Result<(Session, Vec<DisplayMessage>), chatoss_core::storage::StorageError> {
+) -> Result<(Session, Vec<DisplayMessage>), nativedesk_core::storage::StorageError> {
     let model = store
         .list_conversations()?
         .into_iter()
@@ -446,7 +446,7 @@ fn truncate_title(text: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chatoss_core::ollama::{FunctionCall, ToolCall};
+    use nativedesk_core::ollama::{FunctionCall, ToolCall};
     use serde_json::json;
 
     #[test]
@@ -585,7 +585,7 @@ mod tests {
 
     // --- Test determinista del flujo de permisos (sin LLM) ---
 
-    use chatoss_core::ollama::{
+    use nativedesk_core::ollama::{
         ChatRequest, ChatStreamChunk, ModelInfo, OllamaError, StreamMessage,
     };
     use std::collections::VecDeque;

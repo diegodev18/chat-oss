@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Borra la base de datos de conversaciones (~/.chatoss/chatoss.db).
+# Delete the conversation database (~/.nativedesk/nativedesk.db).
 # Pide confirmación salvo que se pase --yes.
 source "$(dirname "${BASH_SOURCE[0]}")/_lib.sh"
 
-db="${CHATOSS_DB:-$HOME/.chatoss/chatoss.db}"
+db="${NATIVEDESK_DB:-${CHATOSS_DB:-$HOME/.nativedesk/nativedesk.db}}"
 
 if [[ ! -f "$db" ]]; then
   ok "No hay base de datos en $db (nada que borrar)"

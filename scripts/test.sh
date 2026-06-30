@@ -18,10 +18,10 @@ done
 
 if [[ "$live" -eq 1 ]]; then
   ollama_up || die "Ollama no responde en $OLLAMA_HOST; los tests live lo necesitan. Probá 'ollama serve'."
-  if ! ollama list 2>/dev/null | awk 'NR>1{print $1}' | grep -qx "$CHATOSS_MODEL"; then
-    die "Falta el modelo '$CHATOSS_MODEL'. Descargalo con: ollama pull $CHATOSS_MODEL"
+  if ! ollama list 2>/dev/null | awk 'NR>1{print $1}' | grep -qx "$NATIVEDESK_MODEL"; then
+    die "Falta el modelo '$NATIVEDESK_MODEL'. Descargalo con: ollama pull $NATIVEDESK_MODEL"
   fi
-  info "Tests live contra Ollama ($CHATOSS_MODEL)…"
+  info "Tests live contra Ollama ($NATIVEDESK_MODEL)…"
   exec cargo test --workspace ${args:+"${args[@]}"} -- --ignored --nocapture
 fi
 

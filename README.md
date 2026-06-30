@@ -1,4 +1,4 @@
-# chatoss
+# NativeDesk
 
 App de escritorio **nativa en Rust** para chatear con modelos open source vía
 **Ollama**, con un agente estilo Claude capaz de **invocar herramientas**
@@ -10,14 +10,17 @@ App de escritorio **nativa en Rust** para chatear con modelos open source vía
 - **Persistencia** de conversaciones en SQLite.
 - **Permisos**: las herramientas peligrosas piden confirmación en cada uso.
 
+> **Documentación de contexto:** [`docs/PROJECT_CONTEXT.md`](docs/PROJECT_CONTEXT.md) ·
+> **Roadmap:** [`docs/ROADMAP.md`](docs/ROADMAP.md)
+
 ## Arquitectura
 
 Workspace con dos crates:
 
-- **`core`** — núcleo UI-agnóstico y testeable: cliente de Ollama, loop del agente,
-  herramientas, y persistencia SQLite.
-- **`ui`** — app egui. Un hilo dedicado con runtime tokio ejecuta el agente; la UI y el
-  motor se comunican por canales (`Command` / `UiEvent`).
+- **`core`** (`nativedesk-core`) — núcleo UI-agnóstico y testeable: cliente de Ollama,
+  loop del agente, herramientas, y persistencia SQLite.
+- **`ui`** (`nativedesk-ui`) — app egui. Un hilo dedicado con runtime tokio ejecuta el
+  agente; la UI y el motor se comunican por canales (`Command` / `UiEvent`).
 
 ## Herramientas incluidas
 
@@ -44,12 +47,22 @@ Workspace con dos crates:
 ## Ejecutar
 
 ```sh
-cargo run -p chatoss-ui --release
+cargo run -p nativedesk-ui --release
+```
+
+O con los atajos del Makefile:
+
+```sh
+make setup   # verifica deps y descarga el modelo
+make run     # lanza la app
 ```
 
 El host de Ollama se puede cambiar con la variable `OLLAMA_HOST`
 (por defecto `http://localhost:11434`). Las conversaciones se guardan en
-`~/.chatoss/chatoss.db`.
+`~/.nativedesk/nativedesk.db`.
+
+Si tenías datos de la versión anterior (`~/.chatoss/`), la app los migra
+automáticamente al primer arranque.
 
 ## Tests
 
@@ -60,3 +73,9 @@ cargo test --workspace
 # Integración real contra Ollama (requiere llama3.1:8b)
 cargo test --workspace -- --ignored
 ```
+
+## Contribuir
+
+Las contribuciones son bienvenidas. Lee
+[`docs/PROJECT_CONTEXT.md`](docs/PROJECT_CONTEXT.md) para entender la visión del
+proyecto y [`docs/ROADMAP.md`](docs/ROADMAP.md) para ver las fases planificadas.

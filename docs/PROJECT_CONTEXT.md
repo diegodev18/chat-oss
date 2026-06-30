@@ -1,12 +1,14 @@
 # Project Context — NativeDesk
 
-> **Working name:** NativeDesk (preferred product name)  
-> **Current repo / crate name:** `chatoss` (chat + open source) — rename TBD  
+> **Product name:** NativeDesk  
+> **Crates:** `nativedesk-core`, `nativedesk-ui` · **Binary:** `nativedesk`  
 > **Version:** 0.1.0 · **License:** MIT · **Status:** early development
 
 This document captures the product vision, design intent, and technical context for
 contributors and AI agents working on the codebase. It complements the technical
 [`README.md`](../README.md) with the *why* behind the project.
+
+See also: [`ROADMAP.md`](ROADMAP.md) for phased delivery plan.
 
 ---
 
@@ -61,7 +63,6 @@ Explicit boundaries to keep scope clear:
 | Non-goal | Notes |
 |----------|-------|
 | **Web UI** | Desktop-native only. No browser-based interface. |
-| *(none else defined yet)* | Security limits, data policies, and near-term roadmap are still TBD. |
 
 Future goals that are **in scope** but **not near-term**:
 
@@ -76,7 +77,7 @@ Rust workspace with two crates:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  ui (chatoss-ui)                                        │
+│  ui (nativedesk-ui)                                     │
 │  egui/eframe · markdown rendering · permission dialogs  │
 │         │ Command                    UiEvent ▲          │
 │         ▼                                  │            │
@@ -84,7 +85,7 @@ Rust workspace with two crates:
 └─────────────────────────┬───────────────────────────────┘
                           │
 ┌─────────────────────────▼───────────────────────────────┐
-│  core (chatoss-core) — UI-agnostic, testable            │
+│  core (nativedesk-core) — UI-agnostic, testable         │
 │  ┌──────────┐  ┌──────────┐  ┌─────────┐  ┌─────────┐  │
 │  │  Agent   │  │  Ollama  │  │  Tools  │  │ SQLite  │  │
 │  │  loop    │  │  client  │  │registry │  │  Store  │  │
@@ -113,7 +114,8 @@ runtime and communicates via channels:
 
 ### Persistence
 
-- SQLite database at `~/.chatoss/chatoss.db`
+- SQLite database at `~/.nativedesk/nativedesk.db`
+- Legacy path `~/.chatoss/chatoss.db` is migrated automatically on first launch
 - Tables: `conversations`, `messages` (with serialized tool calls)
 - Conversation titles are auto-generated via a separate LLM call
 
@@ -139,15 +141,16 @@ Path traversal is blocked for filesystem tools.
 | Setting | Mechanism | Default |
 |---------|-----------|---------|
 | Ollama host | `OLLAMA_HOST` env var | `http://localhost:11434` |
-| Data directory | Hardcoded | `~/.chatoss/` |
+| Data directory | Hardcoded | `~/.nativedesk/` |
 | Model selection | Per conversation, from Ollama `/api/tags` | User picks in UI |
+| Default test model | `NATIVEDESK_MODEL` env var | `llama3.1:8b` |
 
 ### Planned
 
 | Feature | Notes |
 |---------|-------|
 | **Config file** (TOML/YAML) | Replace / extend env-only configuration |
-| **API-key providers** | OpenRouter, OpenAI-compatible APIs, etc. — phase TBD |
+| **API-key providers** | OpenRouter, OpenAI-compatible APIs, etc. — see [Phase 2](ROADMAP.md#phase-2--api-key-providers) |
 | **Working directory** | Per-app or per-conversation — **undecided** |
 
 ---
@@ -182,32 +185,7 @@ rest for API keys) are **not yet defined**.
 
 ---
 
-## 9. Roadmap snapshot
-
-### Undefined / TBD
-
-- Near-term feature priorities
-- 6–12 month target state
-- Security hard limits
-- Data privacy policy (backup, encryption, sensitive data handling)
-- API-key provider rollout phase
-- Working directory strategy
-
-### Confirmed future direction
-
-| Item | Description |
-|------|-------------|
-| Chat / Cowork / Code modes | Full Claude Desktop-like surface |
-| Config file | Centralized user configuration |
-| API-key backends | Remote models alongside Ollama |
-| `web_search` provider | When Cowork/Code modes land |
-| Cloud sync | Future |
-| Plugin marketplace | In-repo; plugins installed locally |
-| Distribution | Currently **clone + `cargo run`** only; no release pipeline yet |
-
----
-
-## 10. Development conventions
+## 9. Development conventions
 
 | Topic | Rule |
 |-------|------|
@@ -225,28 +203,27 @@ make run        # release build
 make dev        # debug + auto-restart on change
 make test       # unit/integration (no Ollama)
 make test-live  # integration against real Ollama
-make reset-db   # wipe ~/.chatoss/chatoss.db
+make reset-db   # wipe ~/.nativedesk/nativedesk.db
 ```
 
 ---
 
-## 11. Naming
+## 10. Naming
 
 | Name | Role |
 |------|------|
-| **NativeDesk** | Preferred **product name** — emphasizes native desktop stack |
-| **chatoss** | Current **repository and crate prefix** (chat + open source) |
+| **NativeDesk** | Product name — emphasizes native desktop stack |
+| **nativedesk-core / nativedesk-ui** | Rust crate names (renamed from `chatoss-*`) |
+| **chat-oss** | Current GitHub repository name (optional rename to `nativedesk`) |
 
-A full rename (repo, crates, data directory) has not been executed yet. Before
-renaming, verify availability on GitHub, crates.io, and trademark conflicts.
+Legacy `chatoss` data paths are migrated automatically on first launch after the rename.
 
 ---
 
-## 12. Open questions log
+## 11. Open questions log
 
 Track decisions as they get made:
 
-- [ ] Rename repo/crates from `chatoss` → `nativedesk` (or similar)?
 - [ ] Config file format and location (`~/.config/nativedesk/config.toml`?)
 - [ ] Working directory: global vs per-conversation?
 - [ ] Permission model: session trust, allowlist, auto mode — design & UX
@@ -256,19 +233,20 @@ Track decisions as they get made:
 - [ ] Plugin marketplace format and loading mechanism
 - [ ] Security & privacy policy (encryption, key storage, data retention)
 - [ ] Distribution channels (GitHub Releases, Homebrew, …)
-- [ ] Near-term roadmap prioritization
+- [ ] Rename GitHub repo from `chat-oss` to `nativedesk` (optional)
 
 ---
 
-## 13. For AI agents
+## 12. For AI agents
 
 When working on this codebase:
 
 1. Read this file first for product intent and boundaries.
 2. Read [`README.md`](../README.md) for build/run instructions.
-3. Keep **`core` UI-agnostic** — business logic and tests belong there.
-4. UI changes stay in `ui/`; cross-boundary communication uses `Command` / `UiEvent`.
-5. New tools implement the registry pattern in `core/src/tools/`.
-6. Dangerous tools must go through `PermissionGate`.
-7. All new **source code** must be in **English**.
-8. Do not add a web UI — desktop-native only.
+3. Read [`ROADMAP.md`](ROADMAP.md) before picking up feature work.
+4. Keep **`core` UI-agnostic** — business logic and tests belong there.
+5. UI changes stay in `ui/`; cross-boundary communication uses `Command` / `UiEvent`.
+6. New tools implement the registry pattern in `core/src/tools/`.
+7. Dangerous tools must go through `PermissionGate`.
+8. All new **source code** must be in **English**.
+9. Do not add a web UI — desktop-native only.

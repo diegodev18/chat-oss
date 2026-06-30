@@ -2,12 +2,12 @@
 //!
 //! Requieren `ollama serve` y el modelo `llama3.1:8b` (`ollama pull llama3.1:8b`).
 //! Por eso están marcadas `#[ignore]`; se ejecutan con:
-//!   cargo test -p chatoss-core --test live_ollama -- --ignored --nocapture
+//!   cargo test -p nativedesk-core --test live_ollama -- --ignored --nocapture
 
 use async_trait::async_trait;
-use chatoss_core::agent::{Agent, PermissionGate};
-use chatoss_core::ollama::{ChatMessage, HttpOllamaClient, OllamaClient};
-use chatoss_core::tools::{CalcTool, ToolRegistry};
+use nativedesk_core::agent::{Agent, PermissionGate};
+use nativedesk_core::ollama::{ChatMessage, HttpOllamaClient, OllamaClient};
+use nativedesk_core::tools::{CalcTool, ToolRegistry};
 use serde_json::Value;
 
 struct AllowAll;
@@ -46,8 +46,8 @@ async fn agent_uses_calc_tool_end_to_end() {
     ];
 
     let mut tool_used = false;
-    let mut on_event = |e: chatoss_core::agent::AgentEvent| {
-        if let chatoss_core::agent::AgentEvent::ToolStarted { name, args } = &e {
+    let mut on_event = |e: nativedesk_core::agent::AgentEvent| {
+        if let nativedesk_core::agent::AgentEvent::ToolStarted { name, args } = &e {
             println!("[tool] {name} {args}");
             if name == "calc" {
                 tool_used = true;

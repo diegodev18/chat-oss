@@ -2,7 +2,7 @@
 # Verifica las dependencias del proyecto y descarga el modelo de Ollama.
 #
 #   ./scripts/setup.sh            # usa el modelo por defecto (llama3.1:8b)
-#   CHATOSS_MODEL=qwen2.5:7b ./scripts/setup.sh
+#   NATIVEDESK_MODEL=qwen2.5:7b ./scripts/setup.sh
 source "$(dirname "${BASH_SOURCE[0]}")/_lib.sh"
 
 info "Comprobando toolchain de Rust…"
@@ -28,12 +28,12 @@ else
   ok "$(ollama --version 2>&1 | head -1)"
   if ollama_up; then
     ok "Ollama responde en $OLLAMA_HOST"
-    if ollama list 2>/dev/null | awk 'NR>1{print $1}' | grep -qx "$CHATOSS_MODEL"; then
-      ok "El modelo '$CHATOSS_MODEL' ya está descargado"
+    if ollama list 2>/dev/null | awk 'NR>1{print $1}' | grep -qx "$NATIVEDESK_MODEL"; then
+      ok "El modelo '$NATIVEDESK_MODEL' ya está descargado"
     else
-      info "Descargando modelo '$CHATOSS_MODEL' (puede tardar)…"
-      ollama pull "$CHATOSS_MODEL"
-      ok "Modelo '$CHATOSS_MODEL' listo"
+      info "Descargando modelo '$NATIVEDESK_MODEL' (puede tardar)…"
+      ollama pull "$NATIVEDESK_MODEL"
+      ok "Modelo '$NATIVEDESK_MODEL' listo"
     fi
   else
     warn "Ollama no responde en $OLLAMA_HOST. Arrancalo con: ollama serve"
