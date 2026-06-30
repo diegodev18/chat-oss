@@ -294,12 +294,13 @@ impl ChatossApp {
                                 .selectable_label(selected, truncate(&conv.title, 26))
                                 .clicked()
                             {
-                                self.editing_conv = Some(EditingConv {
-                                    id: conv.id,
-                                    title: conv.title.clone(),
-                                });
-                                self.edit_focus_pending = true;
-                                if !selected {
+                                if selected {
+                                    self.editing_conv = Some(EditingConv {
+                                        id: conv.id,
+                                        title: conv.title.clone(),
+                                    });
+                                    self.edit_focus_pending = true;
+                                } else {
                                     to_open = Some(conv.id);
                                 }
                             }
